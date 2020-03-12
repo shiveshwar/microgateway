@@ -148,7 +148,7 @@ Verify.prototype.verify = function verify(options) {
       async.each(prods, function (prod, eachCb) {
         request({
           method: 'POST',
-          uri: downloadedConfig.quota[prod].uri,
+          uri: downloadedConfig.quota[prod].uri + '/v2/quotas/apply',
           auth: {
             user: key,
             pass: secret
@@ -227,7 +227,7 @@ Verify.prototype.verify = function verify(options) {
 
   const cachePath = configLocations.getCachePath(options.org, options.env);
 
-  edgeconfig.get({ source: sourcePath, keys: keys }, function (err, config) {
+  edgeconfig.get({ source: sourcePath, keys: keys, org: options.org, env: options.env}, function (err, config) {
     edgeconfig.save(config, cachePath);
     agentLib({ keys: keys, target: cachePath }, (err, agent, config) => {
       if (err) {
