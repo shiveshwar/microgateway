@@ -15,6 +15,7 @@ const uuid = require('uuid/v1');
 const debug = require('debug')('microgateway');
 const jsdiff = require('diff');
 const _ = require('lodash');
+const EMG_PORT = 8002;
 //const os = require('os');
 const writeConsoleLog = require('microgateway-core').Logging.writeConsoleLog;
 edgeconfig.setConsoleLogger(writeConsoleLog);
@@ -91,6 +92,10 @@ Gateway.prototype.start = (options,cb) => {
             writeConsoleLog('error', { component: CONSOLE_LOG_TAG_COMP }, "Failed in writing to Redis DB.", err);
             return;
         }
+        // updating port of emg in config if envoy is set yes.
+        if (options.envoy === 'Y' || options.envoy === 'y') {
+            config.edgemicro.port = parseInt(EMG_PORT);
+        }
         edgeconfig.save(config, cache);
     };
 
@@ -117,6 +122,11 @@ Gateway.prototype.start = (options,cb) => {
             if (options.port) {
                 config.edgemicro.port = parseInt(options.port);
             }
+            // updating port of emg in config if envoy is set yes.
+            if (options.envoy === 'Y' || options.envoy === 'y') {
+                config.edgemicro.port = parseInt(EMG_PORT);
+            }
+
             edgeconfig.save(config, cache);
         }
         config.uid = uuid();
@@ -223,6 +233,11 @@ Gateway.prototype.start = (options,cb) => {
                     var isConfigChanged = hasConfigChanged(oldConfig, newConfig);
                     if (isConfigChanged) {
                         writeConsoleLog('log', { component: CONSOLE_LOG_TAG_COMP }, 'Configuration change detected. Saving new config and Initiating reload');
+                        // updating port of emg in config if envoy is set yes.
+                        if (options.envoy === 'y') {
+                            config.edgemicro.port = parseInt(EMG_PORT);
+                        }
+                        
                         edgeconfig.save(newConfig, cache);
                         clientSocket.sendMessage({
                             command: 'reload'
@@ -291,6 +306,10 @@ Gateway.prototype.reload = (options) => {
                     })
                 }
             } else {
+                // updating port of emg in config if envoy is set yes.
+                if (options.envoy === 'y') {
+                    config.edgemicro.port = parseInt(EMG_PORT);
+                }
                 edgeconfig.save(config, cache);
             }
 
