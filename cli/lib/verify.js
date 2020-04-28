@@ -195,7 +195,7 @@ Verify.prototype.verify = function verify(options) {
         "client_id": "6gClRCKp0UCOZ8o9Q5S7X88nI5hgizGQ",
         "api_product": "travel-app"
       }
-
+      // console.log('--------analytics uri--------', downloadedConfig.analytics.uri);
       request({
         method: 'POST',
         uri: downloadedConfig.analytics.uri,

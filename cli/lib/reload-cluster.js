@@ -556,8 +556,9 @@ class ClusterManager extends EventEmitter {
       //
       // whenever worker sends a message, emit it to the channels
       worker.on('message', (message) => {
+        console.log('------------------message from worker------------------------', message);
         if ( this.opt.logger ) {
-          this.opt.logger.writeLogRecord(message);
+          this.opt.logger.writeLogRecord(message);  
         }
         this.emit('message', worker, message);
       });
