@@ -102,7 +102,7 @@ function updateNonCPSKVM(options, serviceKey, newCertificate, newPublicKey, oldP
     });	
 }
 
-function checkKVMEntry(options, key) {
+function checkKVMEntry(options, key, cb) {
 	var entryuri = util.format("%s/v1/organizations/%s/environments/%s/keyvaluemaps/%s/entries/%s",
 	options.baseuri, options.org, options.env, options.kvm, key);
 
@@ -111,8 +111,15 @@ function checkKVMEntry(options, key) {
         auth: generateCredentialsObject(options),
         method: "GET",
     }, function(err, res /*, body */) {
-        if (err || res.statusCode > 299) return false;
-		else return true;
+        if (err){
+			cb(err);
+		} else{
+			if (res.body && res.body.name === 'public_key2_kid'){
+				cb(null, true);
+			} else{
+				cb(null, false);
+			}
+		}
     });						
 }
 
@@ -132,8 +139,8 @@ function insertKVMEntry(options, key, value, cb) {
     }, function(err, res /*, body */) {
         if (err || res.statusCode > 299) cb(err);
 		else cb(null, true);
-    });		
-	
+	});	
+
 }
 
 function updateKVMEntry(options, key, value, cb) {
@@ -152,30 +159,34 @@ function updateKVMEntry(options, key, value, cb) {
     }, function(err, res /*, body */) {
         if (err || res.statusCode > 299) cb(err);
 		else cb(null, true);
-    });	
-	
+	});
 }
 
 function updateOrInsertEntry (options, key, value, cb) {
-	if (checkKVMEntry(options, key)) {
-		debug("entry exists, updating..");
-		updateKVMEntry(options, key, value, function(err /*, result */){
-			if (err) cb(err);
-			else cb(null, true);
-		});
-	} else {
-		debug("entry does not exist. inserting entry...")
-		insertKVMEntry(options, key, value, function(err /*, result */){
-			if (err) cb(err);
-			else cb(null, true);
-		});
-	}
+	checkKVMEntry(options, key, function(err, isKvmEntry) {
+		if (err) {
+            writeConsoleLog('log',{component: CONSOLE_LOG_TAG_COMP},"Error in rotate key while checking kvm entry: "+ err);
+            process.exit(1);
+        } else if (isKvmEntry){
+			debug("entry exists, updating..");
+			updateKVMEntry(options, key, value, function(err /*, result */){
+				if (err) cb(err);
+				else cb(null, true);
+			});
+		} else{
+			debug("entry does not exist. inserting entry...")
+			insertKVMEntry(options, key, value, function(err /*, result */){
+				if (err) cb(err);
+				else cb(null, true);
+			});	
+		}
+	});
 }
 
 function updateCPSKVM(options, serviceKey, newCertificate, newPublicKey, oldPublicKey) {
 	var updatecpskvmuri = util.format("%s/v1/organizations/%s/environments/%s/keyvaluemaps/%s/entries/",
-                    options.baseuri, options.org, options.env,options.kvm);	
-	
+					options.baseuri, options.org, options.env,options.kvm);	
+
 	async.parallel([
 		function (cb) {
 			var entry = {
@@ -272,6 +283,21 @@ function updateCPSKVM(options, serviceKey, newCertificate, newPublicKey, oldPubl
     });
 }
 
+function validateKeys(options, cb){
+    var URI = util.format("https://%s-%s.apigee.net/edgemicro-auth/keys", options.org, options.env);
+    request({
+        uri: URI,
+        method: "GET"
+    },function (err, res) {
+        if (err){
+            cb(err);
+        } else {
+            const keys = JSON.parse(res.body);
+            cb(null, keys);
+        } 
+    });
+}
+
 const RotateKey = function () {
 
 }
@@ -284,8 +310,25 @@ RotateKey.prototype.rotatekey = function rotatekey(options /*, cb */) {
 
     options.baseuri = options.mgmtUrl || "https://api.enterprise.apigee.com";
     options.kvm = "microgateway";
-    options.kid =  options.kid || "2";
-	options.oldkid = options["prevKid"] || "1";
+	options.kid =  options.kid;
+
+	validateKeys(options, function(err, keys) {
+		if (err) {
+            writeConsoleLog('log',{component: CONSOLE_LOG_TAG_COMP},"Error in rotate key: "+ err);
+            process.exit(1);
+        } else {
+			// check kid is exists or not.
+			if (options.kid === keys.private_key_kid){
+				writeConsoleLog('log',{component: CONSOLE_LOG_TAG_COMP}, "kid : " + keys.private_key_kid + " alredy exist try with other key");
+				process.exit(1);
+			} else if (options["prevKid"] || keys.public_key1_kid !=='null'){
+				options.oldkid = options["prevKid"] || keys.public_key1_kid;
+			} else{
+				writeConsoleLog('log',{component: CONSOLE_LOG_TAG_COMP},"Error in rotate key to get old key kid");
+				process.exit(1);
+			}
+		}
+	});
 
     async.series([
     	function(cb) {
@@ -328,7 +371,6 @@ RotateKey.prototype.rotatekey = function rotatekey(options /*, cb */) {
 						if (e) cb(e);
 						else cb(null, oldPublicKey);
 					});
-					
 				}, 
 				function(cb) {
 					writeConsoleLog('log',{component: CONSOLE_LOG_TAG_COMP},"Generating New key/cert pair...");

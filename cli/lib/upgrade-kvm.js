@@ -28,10 +28,10 @@ function updateKvmEntries(options, entries, publicKey) {
 
     var updatekvmuri = util.format("%s/v1/organizations/%s/environments/%s/keyvaluemaps/%s/entries",
     options.baseuri, options.org, options.env, options.kvm);
-
+   
     async.parallel([
+        
         function(cb) {
-
             let payload =  {
                 "name": "private_key_kid",
                 "value": options.kid
@@ -114,8 +114,23 @@ function updateKvmEntries(options, entries, publicKey) {
     });
 }
 
+function getKeys(options, cb){
+    var URI = util.format("https://%s-%s.apigee.net/edgemicro-auth/keys", options.org, options.env);
+    request({
+        uri: URI,
+        method: "GET"
+    },function (err, res, body) {
+        if (err){
+            cb(err);
+        } else {
+            const keys = JSON.parse(res.body);
+            cb(null, keys);
+        } 
+    });
+}
+
 function readKvmEntries(options, publicKey) {
-    
+
     var getkvmuri = util.format("%s/v1/organizations/%s/environments/%s/keyvaluemaps/%s",
     options.baseuri, options.org, options.env, options.kvm);
 
@@ -169,8 +184,19 @@ UpgradeKVM.prototype.upgradekvm = function upgradekvm(options, cb) {
 
     options.baseuri = options.mgmtUrl || "https://api.enterprise.apigee.com";
     options.kvm = 'microgateway';
-    options.kid = '1';
     options.virtualhost = options.virtualhost || 'secure';    
+    getKeys(options, function(err, keys) {
+		if (err) {
+            writeConsoleLog('log',{component: CONSOLE_LOG_TAG_COMP},"Error in upgrade kvm: "+ err);
+            process.exit(1);
+        } else {
+            if (keys && keys.private_key_kid !== 'null'){
+                options.kid = keys.private_key_kid
+            } else{
+                options.kid = '1';
+            }
+		}
+    });
 
     var publicKeyURI = util.format('https://%s-%s.apigee.net/edgemicro-auth/publicKey', options.org, options.env);
 
@@ -186,9 +212,9 @@ UpgradeKVM.prototype.upgradekvm = function upgradekvm(options, cb) {
             writeConsoleLog('log',{component: CONSOLE_LOG_TAG_COMP},"Certificate found!");
             pem.getPublicKey(body, function(err, publicKey) {
                 writeConsoleLog('log',{component: CONSOLE_LOG_TAG_COMP},publicKey.publicKey);
-                
+
                 readKvmEntries(options, publicKey);
-                
+
             });
         }
        }
