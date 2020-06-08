@@ -81,26 +81,23 @@ module.exports = function() {
         .command('upgradekvm')
         .option('-o, --org <org>', 'the organization')
         .option('-e, --env <env>', 'the environment')
-        .option('-u, --username <user>', 'username of the organization admin')
-        .option('-p, --password <password>', 'password of the organization admin')
+        .option('-k, --key <key>', 'key for authenticating with Edge')
+        .option('-s, --secret <secret>', 'secret for authenticating with Edge')
         .option('-v, --virtualhost <virtualhost>', 'virtual host of the proxy')
-        .option('-m, --mgmt-url <mgmtUrl>', 'the URL of the management server')
         .option('-t, --token <token>', 'OAuth token to use with management API')
+        .option('-p, --proxyuri <proxyuri>', 'proxyuri for edgeauth proxy')
         .description('upgrade kvm to support JWT Key rotation')
         .action((options) => {
             options.error = optionError(options);
             options.token = options.token || process.env.EDGEMICRO_SAML_TOKEN;
 
             if (!options.token) {
-                if (!options.username) {
-                    return options.error('username is required');
+                if (!options.key) {
+                    return options.error('key is required');
                 }
-
-                promptForPassword(options, (options) => {
-                    if (!options.password) {
-                        return options.error('password is required');
-                    }
-                });
+                if (!options.secret) {
+                    return options.error('secret is required');
+                }
             }
 
             if (!options.org) {
@@ -109,17 +106,13 @@ module.exports = function() {
             if (!options.env) {
                 return options.error('env is required');
             }
-            if (!options.runtimeUrl) {
-                return options.error('runtimeUrl is required');
+            if (!options.proxyuri) {
+                return options.error('proxyuri is required')
             }
-            if (!options.mgmtUrl) {
-                return options.error('mgmtUrl is required');
+            if (options.proxyuri && !options.proxyuri.includes('http')) {
+                return options.error('proxyuri requires a prototcol http or https')
             }
-            if (!options.mgmtUrl.includes('http')) {
-                return options.error('runtimeUrl requires a prototcol http or https')
-            }
-
-            upgradekvm.upgradekvm(options, () => {});
+            upgradekvm.upgradekvm(options);
 
         });
 
@@ -169,26 +162,23 @@ module.exports = function() {
         .command('rotatekey')
         .option('-o, --org <org>', 'the organization')
         .option('-e, --env <env>', 'the environment')
-        .option('-u, --username <user>', 'username of the organization admin')
-        .option('-p, --password <password>', 'password of the organization admin')
-        .option('-k, --kid <kid>', 'new key identifier')
-        .option('-m, --mgmt-url <mgmtUrl>', 'the URL of the management server')
+        .option('-k, --key <key>', 'key for authenticating with Edge')
+        .option('-s, --secret <secret>', 'secret for authenticating with Edge')
+        .option('-i, --kid <kid>', 'new key identifier')
         .option('-t, --token <token>', 'OAuth token to use with management API')
+        .option('-r, --rotatekeyuri <rotatekeyuri>', 'Rotate  key url')
         .description('Rotate JWT Keys')
         .action((options) => {
             options.error = optionError(options);
             options.token = options.token || process.env.EDGEMICRO_SAML_TOKEN;
 
             if (!options.token) {
-                if (!options.username) {
-                    return options.error('username is required');
+                if (!options.key) {
+                    return options.error('key is required');
                 }
-
-                promptForPassword(options, (options) => {
-                    if (!options.password) {
-                        return options.error('password is required');
-                    }
-                });
+                if (!options.secret) {
+                    return options.error('secret is required');
+                }
             }
             if (!options.org) {
                 return options.error('org is required');
@@ -196,15 +186,13 @@ module.exports = function() {
             if (!options.env) {
                 return options.error('env is required');
             }
-            if (!options.mgmtUrl) {
-                return options.error('mgmtUrl is required');
+            if (!options.rotatekeyuri) {
+                return options.error('rotatekeyuri is required')
             }
-            if (!options.mgmtUrl.includes('http')) {
-                return options.error('runtimeUrl requires a prototcol http or https')
+            if (options.rotatekeyuri && !options.rotatekeyuri.includes('http')) {
+                return options.error('rotatekeyuri requires a prototcol http or https')
             }
-
-            rotatekey.rotatekey(options, () => {});
-            
+            rotatekey.rotatekey(options);
         });
 
     app.parse(process.argv);
