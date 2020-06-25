@@ -83,23 +83,17 @@ module.exports = function() {
         .option('-e, --env <env>', 'the environment')
         .option('-k, --key <key>', 'key for authenticating with Edge')
         .option('-s, --secret <secret>', 'secret for authenticating with Edge')
-        .option('-v, --virtualhost <virtualhost>', 'virtual host of the proxy')
-        .option('-t, --token <token>', 'OAuth token to use with management API')
         .option('-p, --proxyuri <proxyuri>', 'proxyuri for edgeauth proxy')
         .description('upgrade kvm to support JWT Key rotation')
         .action((options) => {
             options.error = optionError(options);
-            options.token = options.token || process.env.EDGEMICRO_SAML_TOKEN;
 
-            if (!options.token) {
-                if (!options.key) {
-                    return options.error('key is required');
-                }
-                if (!options.secret) {
-                    return options.error('secret is required');
-                }
+            if (!options.key) {
+                return options.error('key is required');
             }
-
+            if (!options.secret) {
+                return options.error('secret is required');
+            }
             if (!options.org) {
                 return options.error('org is required');
             }
@@ -165,20 +159,15 @@ module.exports = function() {
         .option('-k, --key <key>', 'key for authenticating with Edge')
         .option('-s, --secret <secret>', 'secret for authenticating with Edge')
         .option('-i, --kid <kid>', 'new key identifier')
-        .option('-t, --token <token>', 'OAuth token to use with management API')
-        .option('-r, --rotatekeyuri <rotatekeyuri>', 'Rotate  key url')
+        .option('-r, --rotatekeyuri <rotatekeyuri>', 'Rotate key url')
         .description('Rotate JWT Keys')
         .action((options) => {
             options.error = optionError(options);
-            options.token = options.token || process.env.EDGEMICRO_SAML_TOKEN;
-
-            if (!options.token) {
-                if (!options.key) {
-                    return options.error('key is required');
-                }
-                if (!options.secret) {
-                    return options.error('secret is required');
-                }
+            if (!options.key) {
+                return options.error('key is required');
+            }
+            if (!options.secret) {
+                return options.error('secret is required');
             }
             if (!options.org) {
                 return options.error('org is required');

@@ -20,16 +20,10 @@ function createCert(cb) {
 }
 
 function generateCredentialsObject(options) {
-    if (options.token) {
-        return {
-            "bearer": options.token
-        };
-    } else {
-        return {
-            user: options.key,
-            pass: options.secret
-        };
-    }
+    return {
+        user: options.key,
+        pass: options.secret
+    };
 }
 
 const RotateKey = function () {

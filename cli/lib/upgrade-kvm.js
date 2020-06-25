@@ -8,16 +8,10 @@ const writeConsoleLog = require('microgateway-core').Logging.writeConsoleLog;
 const CONSOLE_LOG_TAG_COMP = 'microgateway upgrade kvm';
 
 function generateCredentialsObject(options) {
-    if (options.token) {
-        return {
-            "bearer": options.token
-        };
-    } else {
-        return {
-            user: options.key,
-            pass: options.secret
-        };
-    }
+    return {
+        user: options.key,
+        pass: options.secret
+    };
 }
 
 function updatekvm(options, baseUri){

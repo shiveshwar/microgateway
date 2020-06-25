@@ -474,8 +474,6 @@ const setup = function setup() {
         .option('-e, --env <env>', 'the environment')
         .option('-k, --key <key>', 'key for authenticating with Edge')
         .option('-s, --secret <secret>', 'secret for authenticating with Edge')
-        .option('-t, --token <token>', 'OAuth token to use with management API')
-        .option('-v, --virtualhost <virtualhost>', 'virtual host of the proxy')
         .option('-p, --proxyuri <proxyuri>', 'proxyuri for edgeauth proxy')
         .description('upgrade kvm to support JWT Key rotation')
         .action((options) => {
@@ -486,20 +484,16 @@ const setup = function setup() {
             if (!options.env) {
                 return options.error('env is required');
             }
-            if (options.token) {
-                upgradekvm.upgradekvm(options);
-            } else {
-                if (!options.key) {
-                    return options.error('key is required');
-                }
-                if (!options.secret) {
-                    return options.error('secret is required');
-                }
-                if (options.proxyuri && !options.proxyuri.includes('http')) {
-                    return options.error('proxyuri requires a prototcol http or https')
-                }
-                upgradekvm.upgradekvm(options);
-            } 
+            if (!options.key) {
+                return options.error('key is required');
+            }
+            if (!options.secret) {
+                return options.error('secret is required');
+            }
+            if (options.proxyuri && !options.proxyuri.includes('http')) {
+                return options.error('proxyuri requires a prototcol http or https')
+            }
+            upgradekvm.upgradekvm(options);
         });
 
     commander
@@ -544,7 +538,6 @@ const setup = function setup() {
         .option('-k, --key <key>', 'key for authenticating with Edge')
         .option('-s, --secret <secret>', 'secret for authenticating with Edge')
         .option('-i, --kid <kid>', 'new key identifier')
-        .option('-P,--prev-kid <oldkid>', 'previous key identifier')
         .option('-r, --rotatekeyuri <rotatekeyuri>', 'rotate key url')
         .description('Rotate JWT Keys')
         .action((options) => {
