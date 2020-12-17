@@ -195,7 +195,11 @@ Gateway.prototype.start = (options,cb) => {
         });
         mgCluster.run();
         writeConsoleLog('log', { component: CONSOLE_LOG_TAG_COMP }, 'PROCESS PID : ' + process.pid);
-        fs.appendFileSync(pidPath, process.pid);
+        try {
+            fs.appendFileSync(pidPath, process.pid.toString());
+        }catch(e){
+            debug('error', e);
+        }
         process.on('exit', () => {
             if (!isWin) {
                 writeConsoleLog('log', { component: CONSOLE_LOG_TAG_COMP }, 'Removing the socket file as part of cleanup');
