@@ -12,6 +12,10 @@ jobs:
       language: node_js
       node_js:
         - '12'
+    - # stage name not required, will continue to use `test`    
+      language: node_js
+      node_js:
+        - '14'
     - stage: e2e-v8  # these can be made parallel by using different accounts or names
       language: node_js
       node_js:
@@ -30,6 +34,13 @@ jobs:
       language: node_js
       node_js:
         - '12'
+      script:
+        - npm install -g js-yaml
+        - bash ./test-functional/e2evars.sh
+    - stage: e2e-v14
+      language: node_js
+      node_js:
+        - '14'    
       script:
         - npm install -g js-yaml
         - bash ./test-functional/e2evars.sh
